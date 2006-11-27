@@ -1,0 +1,14 @@
+0.3
+Regex to only display interested content.
+Templates with explicit groups for greater flexibility.
+
+0.2
+Negative coordinates.
+Transparancy.
+Lock the position.
+Opacity.
+Error handling for unspecified settings.
+
+0.1
+Initial version that just output the entire result from the process to the screen.
+Set color, font, size, location.
