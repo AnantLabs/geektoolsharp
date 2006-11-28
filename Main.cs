@@ -9,7 +9,6 @@ using System.ComponentModel;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
-using Common;
 
 namespace GeekTool
 {

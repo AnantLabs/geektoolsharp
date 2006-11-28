@@ -1,3 +1,6 @@
+0.4
+Multiple instances of GeekTool windows with one executable.
+
 0.3
 Regex to only display interested content.
 Templates with explicit groups for greater flexibility.
