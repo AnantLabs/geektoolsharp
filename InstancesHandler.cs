@@ -11,11 +11,13 @@ namespace GeekTool
 {
 	/// <summary>
 	/// InstancesHandler is a class that allows you to read customized application configuration.
-	/// Supposedly this interfac eis depreciated, but using ConfigurationSection 
+	/// Supposedly this interface is depreciated, but using ConfigurationSection 
 	/// doesn't allow me to use a name for an element more than once.
 	/// </summary>
 	public class InstancesHandler : IConfigurationSectionHandler
 	{
+		private const string instanceConst = "instance";
+
 		public InstancesHandler()
 		{
 		}
@@ -29,7 +31,7 @@ namespace GeekTool
 		{
 			List<Instance> list = new List<Instance>();
 
-			foreach (XmlNode node in section.SelectNodes("instance"))
+			foreach (XmlNode node in section.SelectNodes(instanceConst))
 			{
 				XmlNodeReader xmlNodeReader = new XmlNodeReader(node);
 				XmlSerializer serializer = new XmlSerializer(typeof(Instance));
