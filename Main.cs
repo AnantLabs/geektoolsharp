@@ -406,7 +406,12 @@ namespace GeekTool
 
 					if (!process.HasExited)
 					{
-						process.WaitForExit();
+						process.WaitForExit(1000);
+
+						if (!process.HasExited)
+						{
+							process.Kill();
+						}
 					}
 				}
 				catch (Exception ex)
@@ -453,7 +458,6 @@ namespace GeekTool
 		private void exitMenuItem_Click(object sender, EventArgs e)
 		{
 			cleanup();
-
 			Application.Exit();
 		}
 
@@ -594,6 +598,34 @@ namespace GeekTool
 			// Call our custom mouse click method.
 			mouseClick(null, e);
 			base.OnMouseClick(e);
+		}
+
+		/// <summary>
+		/// Clean up any resources being used.
+		/// </summary>
+		/// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+		protected override void Dispose(bool disposing)
+		{
+			if (disposing && (components != null))
+			{
+				cleanup();
+				components.Dispose();
+			}
+
+			base.Dispose(disposing);
+		}
+
+		protected override void WndProc(ref System.Windows.Forms.Message m)
+		{
+			if (m.Msg == 0x11)
+			{
+				cleanup();
+				Application.Exit();
+			}
+
+			// If this is WM_QUERYENDSESSION, the closing event should be
+			// raised in the base WndProc.
+			base.WndProc(ref m);
 		}
 		#endregion
 	}
