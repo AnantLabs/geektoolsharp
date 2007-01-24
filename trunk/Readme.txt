@@ -51,5 +51,8 @@ displayRegex
 displayTemplate
 	The template used to output the content. If no template is specified, all content (that matches the regex above, if specified) is displayed. Explicit groups can also be specified which reference the groups in the regex above. And "{0}" can be used to specify the whole match from the regex.
 
+isRegexCaseSensitive
+	Specifies whether the regex is case-sensitive or not.
+
 displayCharsToReplaceRegex
 	Characters that should always be taken out of the content.
