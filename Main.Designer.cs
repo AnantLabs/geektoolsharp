@@ -76,7 +76,7 @@ namespace GeekTool
 			this.ShowInTaskbar = false;
 			this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Show;
 			this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
-			this.Text = "Form1";
+			this.Text = "GeekTool";
 			this.TransparencyKey = System.Drawing.Color.Fuchsia;
 			this.contextMenuStrip.ResumeLayout(false);
 			this.ResumeLayout(false);
