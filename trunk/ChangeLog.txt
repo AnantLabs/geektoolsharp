@@ -1,3 +1,7 @@
+0.5
+Disable the GeekTool icons when a user is ALT-TABing.
+Case-sensitivity option for regex.
+
 0.4
 Multiple instances of GeekTool windows with one executable.
 

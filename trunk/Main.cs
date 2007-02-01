@@ -9,19 +9,32 @@ using System.ComponentModel;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using Microsoft.Win32;
 
 namespace GeekTool
 {
 	public partial class Main : Form
 	{
-		// Import some Win32 methods for setting the form at the very back.
-		[DllImport("User32.dll")]
-		public static extern Int32 FindWindow(String lpClassName, String lpWindowName);
-		[DllImport("User32.dll")]
-		static extern int SetParent(int hWndChild, int hWndNewParent);
-
 		// Constants.
 		private const string firstGroupConst = "{0}";
+		private const int GWL_EXSTYLE = (-20);
+		private const int WS_EX_TOOLWINDOW = 0x80;
+		private const int WS_EX_APPWINDOW = 0x40000;
+		private const int WM_QUERYENDSESSION = 0x0011;
+		private const int WM_ENDSESSION = 0x0016;
+
+		// Import some Win32 API methods.
+		[DllImport("user32", CharSet = CharSet.Auto)]
+		private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+
+		[DllImport("user32", CharSet = CharSet.Auto)]
+		private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+
+		[DllImport("User32.dll")]
+		public static extern Int32 FindWindow(String lpClassName, String lpWindowName);
+
+		[DllImport("User32.dll")]
+		static extern int SetParent(int hWndChild, int hWndNewParent);
 
 		// Member variables to store some in-house stuff.
 		private bool isMouseDown = false;
@@ -30,7 +43,6 @@ namespace GeekTool
 		private Logger logger;
 		private Timer timer = new Timer();
 		private Regex explicitGroupsRegex = new Regex(@"(\{[^0]+\})", RegexOptions.Compiled);
-		private int pid = 0;
 
 		// Settings.
 		private Instance instance;
@@ -39,6 +51,11 @@ namespace GeekTool
 		// The regular expressions to use. We only want to create these once.
 		private Regex displayRegex;
 		private Regex displayCharsToReplaceRegex;
+		
+		// Process-related objects.
+		private ProcessStartInfo processStartInfo;
+		private Process process;
+		private object lockObject = new object();
 
 		/// <summary>
 		/// The main access point of the program.
@@ -49,6 +66,9 @@ namespace GeekTool
 			{
 				// Initialize VS designer stuff.
 				InitializeComponent();
+
+				// Make sure that our form doesn't show up while a user is ALT-TABing.
+				SetWindowLong(this.Handle, GWL_EXSTYLE, (GetWindowLong(this.Handle, GWL_EXSTYLE) | WS_EX_TOOLWINDOW) & ~WS_EX_APPWINDOW);
 
 				// Settings.
 				this.instance = instance;
@@ -69,7 +89,6 @@ namespace GeekTool
 				if (instance.TimerInterval > 0)
 				{
 					startProcess();
-					timer.Tick += new EventHandler(timer_Tick);
 					startTimer();
 				}
 				else
@@ -103,7 +122,7 @@ namespace GeekTool
 			catch (Exception ex)
 			{
 				// Write the exception to the log file and to the screen if possible.
-				string exception = ex.Message;
+				string exception = ex.Message + ex.StackTrace;
 
 				WriteToScreen(exception);
 
@@ -219,56 +238,69 @@ namespace GeekTool
 		/// </summary>
 		private void startProcess()
 		{
-			// Generate a new process.
-			using (Process process = new Process())
+			// Set the file information about the process.
+			if (processStartInfo == null)
 			{
-				// Set the file information about the process.
-				process.StartInfo.FileName = instance.FileName;
+				process = new Process();
+				processStartInfo = new ProcessStartInfo();
+
+				processStartInfo.FileName = instance.FileName;
 
 				if (!string.IsNullOrEmpty(instance.FileArgs))
 				{
-					process.StartInfo.Arguments = instance.FileArgs;
+					processStartInfo.Arguments = instance.FileArgs;
 				}
 
 				// These have to be set like this so we can get the output.
-				process.StartInfo.CreateNoWindow = true;
-				process.StartInfo.RedirectStandardError = true;
-				process.StartInfo.RedirectStandardOutput = true;
-				process.StartInfo.UseShellExecute = false;
+				processStartInfo.CreateNoWindow = true;
+				processStartInfo.RedirectStandardError = true;
+				processStartInfo.ErrorDialog = false;
+				processStartInfo.RedirectStandardOutput = true;
+				processStartInfo.UseShellExecute = false;
 
+				// Set all of the information to our process.
+				process.StartInfo = processStartInfo;
+			}
+
+			lock (lockObject)
+			{
 				try
 				{
 					process.Start();
-					pid = process.Id;
+					process.WaitForExit();
 
 					// Grab the standard output from the process and write it.
-					string stdOutput = process.StandardOutput.ReadToEnd();
-
-					if (!string.IsNullOrEmpty(stdOutput))
+					using (System.IO.StreamReader sr = process.StandardOutput)
 					{
-						string output = parseOutput(stdOutput);
-						WriteToScreen(output);
+						string stdOutput = sr.ReadToEnd();
+
+						if (!string.IsNullOrEmpty(stdOutput))
+						{
+							string output = parseOutput(stdOutput);
+							WriteToScreen(output);
+						}
 					}
 
 					// Grab the error output from the process and write it.
-					string stdError = process.StandardError.ReadToEnd();
-
-					if (!string.IsNullOrEmpty(stdError))
+					using (System.IO.StreamReader sr = process.StandardError)
 					{
-						WriteToScreen(stdError);
+						string stdError = sr.ReadToEnd();
+
+						if (!string.IsNullOrEmpty(stdError))
+						{
+							WriteToScreen(stdError);
+						}
 					}
 				}
 				catch (Exception ex)
 				{
 					// Write the exception to the log file and screen.
-					string exception = ex.Message;
+					string exception = ex.Message + ex.StackTrace;
 
 					WriteToScreen(exception);
 					logger.Log(exception);
 				}
 			}
-
-			pid = 0;
 		}
 
 		/// <summary>
@@ -367,12 +399,7 @@ namespace GeekTool
 		/// </summary>
 		private void startTimer()
 		{
-			if (timer.Enabled)
-			{
-				timer.Stop();
-				timer.Enabled = false;
-			}
-
+			timer.Tick += new EventHandler(timer_Tick);
 			timer.Interval = instance.TimerInterval;
 			timer.Enabled = true;
 			timer.Start();
@@ -387,6 +414,7 @@ namespace GeekTool
 			{
 				timer.Enabled = false;
 				timer.Stop();
+				timer.Tick -= timer_Tick;
 			}
 		}
 
@@ -398,32 +426,16 @@ namespace GeekTool
 			// Stop the main timer.
 			stopTimer();
 
-			if (pid > 0)
-			{
-				try
-				{
-					Process process = Process.GetProcessById(pid);
-
-					if (!process.HasExited)
-					{
-						process.WaitForExit(1000);
-
-						if (!process.HasExited)
-						{
-							process.Kill();
-						}
-					}
-				}
-				catch (Exception ex)
-				{
-					logger.Log("Error while waiting for the process to finish: " + ex.Message);
-				}
-			}
-
 			// Unregister all of our wired events.
-			//this.Activated -= Main_Activated;
-			//textLabel.MouseMove -= mouseMove;
-			//textLabel.MouseUp -= mouseUp;
+			this.Activated -= Main_Activated;
+			textLabel.MouseMove -= mouseMove;
+			textLabel.MouseUp -= mouseUp;
+
+			// Get rid of our process.
+			lock (lockObject)
+			{
+				process.Dispose();
+			}
 		}
 
 		#region events
@@ -447,7 +459,13 @@ namespace GeekTool
 		/// <param name="e"></param>
 		private void timer_Tick(object sender, EventArgs e)
 		{
-			startProcess();
+			logger.Log(instance.Name + ":" + "Timer tick!");
+
+			lock (lockObject)
+			{
+				logger.Log(instance.Name + ":" + "Start process!");
+				startProcess();
+			}
 		}
 
 		/// <summary>
@@ -608,23 +626,19 @@ namespace GeekTool
 		{
 			if (disposing && (components != null))
 			{
-				cleanup();
 				components.Dispose();
 			}
 
 			base.Dispose(disposing);
 		}
 
-		protected override void WndProc(ref System.Windows.Forms.Message m)
+		protected override void WndProc(ref Message m)
 		{
-			if (m.Msg == 0x11)
+			if (m.Msg == WM_QUERYENDSESSION)
 			{
 				cleanup();
-				Application.Exit();
 			}
 
-			// If this is WM_QUERYENDSESSION, the closing event should be
-			// raised in the base WndProc.
 			base.WndProc(ref m);
 		}
 		#endregion
