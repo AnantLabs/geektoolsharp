@@ -1,1 +1,5 @@
-- Shutting down your computer while GeekTool is running will pop-up a few dialog boxes that need to be clicked.
+Problem:
+Shutting down your computer while GeekTool is running will pop-up a few dialog boxes that need to be clicked.
+
+Solution:
+It is actively being worked on.
