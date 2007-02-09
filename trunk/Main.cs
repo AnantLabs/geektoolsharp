@@ -55,7 +55,6 @@ namespace GeekTool
 		// Process-related objects.
 		private ProcessStartInfo processStartInfo;
 		private Process process;
-		private object lockObject = new object();
 
 		/// <summary>
 		/// The main access point of the program.
@@ -262,44 +261,41 @@ namespace GeekTool
 				process.StartInfo = processStartInfo;
 			}
 
-			lock (lockObject)
+			try
 			{
-				try
+				process.Start();
+				process.WaitForExit();
+
+				// Grab the standard output from the process and write it.
+				using (System.IO.StreamReader sr = process.StandardOutput)
 				{
-					process.Start();
-					process.WaitForExit();
+					string stdOutput = sr.ReadToEnd();
 
-					// Grab the standard output from the process and write it.
-					using (System.IO.StreamReader sr = process.StandardOutput)
+					if (!string.IsNullOrEmpty(stdOutput))
 					{
-						string stdOutput = sr.ReadToEnd();
-
-						if (!string.IsNullOrEmpty(stdOutput))
-						{
-							string output = parseOutput(stdOutput);
-							WriteToScreen(output);
-						}
-					}
-
-					// Grab the error output from the process and write it.
-					using (System.IO.StreamReader sr = process.StandardError)
-					{
-						string stdError = sr.ReadToEnd();
-
-						if (!string.IsNullOrEmpty(stdError))
-						{
-							WriteToScreen(stdError);
-						}
+						string output = parseOutput(stdOutput);
+						WriteToScreen(output);
 					}
 				}
-				catch (Exception ex)
-				{
-					// Write the exception to the log file and screen.
-					string exception = ex.Message + ex.StackTrace;
 
-					WriteToScreen(exception);
-					logger.Log(exception);
+				// Grab the error output from the process and write it.
+				using (System.IO.StreamReader sr = process.StandardError)
+				{
+					string stdError = sr.ReadToEnd();
+
+					if (!string.IsNullOrEmpty(stdError))
+					{
+						WriteToScreen(stdError);
+					}
 				}
+			}
+			catch (Exception ex)
+			{
+				// Write the exception to the log file and screen.
+				string exception = ex.Message + ex.StackTrace;
+
+				WriteToScreen(exception);
+				logger.Log(exception);
 			}
 		}
 
@@ -423,19 +419,24 @@ namespace GeekTool
 		/// </summary>
 		private void cleanup()
 		{
-			// Stop the main timer.
-			stopTimer();
-
 			// Unregister all of our wired events.
 			this.Activated -= Main_Activated;
 			textLabel.MouseMove -= mouseMove;
 			textLabel.MouseUp -= mouseUp;
 
-			// Get rid of our process.
-			lock (lockObject)
+			try
 			{
+				// Stop the main timer.
+				stopTimer();
+			}
+			catch { }
+
+			try
+			{
+				// Get rid of our process.
 				process.Dispose();
 			}
+			catch { }
 		}
 
 		#region events
@@ -459,13 +460,7 @@ namespace GeekTool
 		/// <param name="e"></param>
 		private void timer_Tick(object sender, EventArgs e)
 		{
-			logger.Log(instance.Name + ":" + "Timer tick!");
-
-			lock (lockObject)
-			{
-				logger.Log(instance.Name + ":" + "Start process!");
-				startProcess();
-			}
+			startProcess();
 		}
 
 		/// <summary>
