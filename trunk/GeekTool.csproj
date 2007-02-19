@@ -40,7 +40,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="General.cs" />
     <Compile Include="InstancesHandler.cs" />
     <Compile Include="InvalidSettingsException.cs" />
     <Compile Include="Main.cs">
