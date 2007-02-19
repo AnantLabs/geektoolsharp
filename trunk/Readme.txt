@@ -1,7 +1,16 @@
 GeekTool
-Version 0.3
+Version 0.5.2.0
 
-Most of the settings in the GeekTool.exe.config XML file are self-explanatory, but I will go through a quick rundown anyway.
+GeekTool is Windows clone of a Mac OS X utility of the same name (http://projects.tynsoe.org/en/geektool/). 
+It takes the output from a command-line program and displays it on the desktop.
+
+The source code for this program is available under the GPL; a copy of the license should be distributed with the executable. 
+The source can be downloaded from http://www.longueur.org/software/ or http://code.google.com/p/geektoolsharp/.
+
+There are no warranties, implicit or otherwise, included with this software. 
+Run at your own risk. And read the source to send me suggestions or improvements.
+
+Most of the settings in the GeekTool.exe.config file are self-explanatory, but I will go through a quick rundown anyway.
 
 xPos
 	The position along the horizontal axis of the content. Can be a negative number.
