@@ -40,7 +40,7 @@ fontSize
 	Size of the font.
 
 timerInterval
-	How often the content should refresh (in milliseconds). So, 5000 milliseconds = 5 seconds.
+	How often the content should refresh (in milliseconds). So, 5000 milliseconds = 5 seconds. The minimum value allowed is 2000.
 
 fileName
 	Name of the executable file that should be run.

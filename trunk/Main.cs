@@ -16,25 +16,17 @@ namespace GeekTool
 {
 	public partial class Main : Form
 	{
-		// Constants.
-		private const string firstGroupConst = "{0}";
-		private const int GWL_EXSTYLE = (-20);
-		private const int WS_EX_TOOLWINDOW = 0x80;
-		private const int WS_EX_APPWINDOW = 0x40000;
-		private const int WM_QUERYENDSESSION = 0x0011;
-		private const int WM_ENDSESSION = 0x0016;
-
 		// Import some Win32 API methods.
-		[DllImport("user32", CharSet = CharSet.Auto)]
+		[DllImport(Constants.User32, CharSet = CharSet.Auto)]
 		private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
 
-		[DllImport("user32", CharSet = CharSet.Auto)]
+		[DllImport(Constants.User32, CharSet = CharSet.Auto)]
 		private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
 
-		[DllImport("User32.dll")]
+		[DllImport(Constants.User32)]
 		public static extern Int32 FindWindow(String lpClassName, String lpWindowName);
 
-		[DllImport("User32.dll")]
+		[DllImport(Constants.User32)]
 		static extern int SetParent(int hWndChild, int hWndNewParent);
 
 		// Member variables to store some in-house stuff.
@@ -43,7 +35,8 @@ namespace GeekTool
 		private Point downMousePosition;
 		private Logger logger;
 		private Timer timer = new Timer();
-		private Regex explicitGroupsRegex = new Regex(@"(\{[^0]+\})", RegexOptions.Compiled);
+		private Regex explicitGroupsRegex = new Regex(@"(\{[^0]+\})", 
+			RegexOptions.Compiled);
 
 		// Settings.
 		private Instance instance;
@@ -56,6 +49,7 @@ namespace GeekTool
 		// Process-related objects.
 		private ProcessStartInfo processStartInfo;
 		private Process process;
+		private int processTimeout = 1000;
 
 		/// <summary>
 		/// The main access point of the program.
@@ -68,19 +62,21 @@ namespace GeekTool
 				InitializeComponent();
 
 				// Make sure that our form doesn't show up while a user is ALT-TABing.
-				SetWindowLong(this.Handle, GWL_EXSTYLE, (GetWindowLong(this.Handle, GWL_EXSTYLE) | WS_EX_TOOLWINDOW) & ~WS_EX_APPWINDOW);
+				SetWindowLong(this.Handle, 
+					Constants.GWL_EXSTYLE, 
+					(GetWindowLong(this.Handle, 
+					Constants.GWL_EXSTYLE) | 
+					Constants.WS_EX_TOOLWINDOW) & 
+					~Constants.WS_EX_APPWINDOW);
 
 				// Settings.
 				this.instance = instance;
 				this.logFileName = logFileName;
 
-				// Wire up when the form gets activated..
-				this.Activated += new EventHandler(Main_Activated);
-
 				// Wire up our mouse events.
-				textLabel.MouseMove += new MouseEventHandler(mouseMove);
-				textLabel.MouseUp += new MouseEventHandler(mouseUp);
-				textLabel.MouseClick += new MouseEventHandler(mouseClick);
+				this.textLabel.MouseMove += new MouseEventHandler(mouseMove);
+				this.textLabel.MouseUp += new MouseEventHandler(mouseUp);
+				this.textLabel.MouseClick += new MouseEventHandler(mouseClick);
 
 				// Set our settings.
 				setSettings();
@@ -143,10 +139,10 @@ namespace GeekTool
 			this.logger = new Logger(this.logFileName);
 
 			// Determine our location by the X and Y position.
-			Point location = new Point(instance.X, instance.Y);
+			Point location = new Point(this.instance.X, this.instance.Y);
 
 			// If we want to lock, call a Win32 API to do it.
-			if (instance.IsLocked)
+			if (this.instance.IsLocked)
 			{
 				int pWnd = FindWindow("Progman", null);
 				int tWnd = this.Handle.ToInt32();
@@ -157,26 +153,34 @@ namespace GeekTool
 			// Setup our main regex. 
 			if (!string.IsNullOrEmpty(instance.DisplayRegex))
 			{
-				if (instance.IsRegexCaseSensitive)
+				if (this.instance.IsRegexCaseSensitive)
 				{
-					displayRegex = new Regex(instance.DisplayRegex, RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.ExplicitCapture);
+					this.displayRegex = new Regex(this.instance.DisplayRegex, 
+						RegexOptions.Compiled | 
+						RegexOptions.Multiline | 
+						RegexOptions.ExplicitCapture);
 				}
 				else
 				{
-					displayRegex = new Regex(instance.DisplayRegex, RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase);
+					this.displayRegex = new Regex(this.instance.DisplayRegex, 
+						RegexOptions.Compiled | 
+						RegexOptions.Multiline | 
+						RegexOptions.ExplicitCapture | 
+						RegexOptions.IgnoreCase);
 				}
 			}
 
 			// Setup the regex of the characters we want to get rid of.
 			if (!string.IsNullOrEmpty(instance.DisplayCharsToReplaceRegex))
 			{
-				if (instance.IsRegexCaseSensitive)
+				if (this.instance.IsRegexCaseSensitive)
 				{
-					displayCharsToReplaceRegex = new Regex(instance.DisplayCharsToReplaceRegex, RegexOptions.Compiled);
+					this.displayCharsToReplaceRegex = new Regex(instance.DisplayCharsToReplaceRegex, 
+						RegexOptions.Compiled);
 				}
 				else
 				{
-					displayCharsToReplaceRegex = new Regex(instance.DisplayCharsToReplaceRegex, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+					this.displayCharsToReplaceRegex = new Regex(instance.DisplayCharsToReplaceRegex, RegexOptions.Compiled | RegexOptions.IgnoreCase);
 				}
 			}
 
@@ -187,20 +191,20 @@ namespace GeekTool
 			base.Location = location;
 
 			// Appearantly WinForms can't be any smaller than 112x27.
-			if (instance.Width < 112)
+			if (this.instance.Width < 112)
 			{
-				instance.Width = 112;
+				this.instance.Width = 112;
 			}
 
-			if (instance.Height < 27)
+			if (this.instance.Height < 27)
 			{
-				instance.Height = 27;
+				this.instance.Height = 27;
 			}
 
 			// Set our size.
 			Size size = new Size(instance.Width, instance.Height);
 			this.ClientSize = size;
-			textLabel.Size = size;
+			this.textLabel.Size = size;
 		}
 		#endregion
 
@@ -265,7 +269,7 @@ namespace GeekTool
 			try
 			{
 				process.Start();
-				process.WaitForExit();
+				process.WaitForExit(processTimeout);
 
 				// Grab the standard output from the process and write it.
 				using (System.IO.StreamReader sr = process.StandardOutput)
@@ -308,8 +312,8 @@ namespace GeekTool
 		private string parseOutput(string stdOutput)
 		{
 			// Make sure there is some regex to parse the output with.
-			if (!string.IsNullOrEmpty(instance.DisplayRegex)
-				&& displayRegex != null)
+			if (!string.IsNullOrEmpty(instance.DisplayRegex) && 
+				displayRegex != null)
 			{
 				StringBuilder output = new StringBuilder();
 				string[] explicitGroups = { };
@@ -350,7 +354,7 @@ namespace GeekTool
 						{
 							string matchValue = displayCharsToReplaceRegex.Replace(match.Value, string.Empty);
 
-							string tmpOutput = instance.DisplayTemplate.Replace(firstGroupConst, matchValue);
+							string tmpOutput = instance.DisplayTemplate.Replace(Constants.FirstGroupConst, matchValue);
 							output.Append(tmpOutput);
 						}
 					}
@@ -398,6 +402,12 @@ namespace GeekTool
 		{
 			timer.Tick += new EventHandler(timer_Tick);
 			timer.Interval = instance.TimerInterval;
+
+			if (instance.TimerInterval >= 2000)
+			{
+				processTimeout = instance.TimerInterval - 1000;
+			}
+
 			timer.Enabled = true;
 			timer.Start();
 		}
@@ -421,7 +431,6 @@ namespace GeekTool
 		private void cleanup()
 		{
 			// Unregister all of our wired events.
-			this.Activated -= Main_Activated;
 			textLabel.MouseMove -= mouseMove;
 			textLabel.MouseUp -= mouseUp;
 
@@ -442,26 +451,16 @@ namespace GeekTool
 
 		#region events
 		/// <summary>
-		/// Event which gets fired when the form is activated.
-		/// </summary>
-		/// <param name="sender"></param>
-		/// <param name="e"></param>
-		private void Main_Activated(object sender, EventArgs e)
-		{
-			// Send this bad boy to back of class.
-#if !DEBUG
-			this.SendToBack();
-#endif
-		}
-
-		/// <summary>
 		/// Event which gets fired when the timer interval elapses.
 		/// </summary>
 		/// <param name="sender"></param>
 		/// <param name="e"></param>
 		private void timer_Tick(object sender, EventArgs e)
 		{
-			startProcess();
+			if (processTimeout > 0)
+			{
+				startProcess();
+			}
 		}
 
 		/// <summary>
@@ -508,12 +507,14 @@ namespace GeekTool
 
 							base.Location = location;
 
+#if DEBUG
 							// Output the location to the screen.
 							string locationStr = string.Format("x: {0}; y: {1}",
 								location.X,
 								location.Y);
 
 							WriteToScreen(locationStr);
+#endif
 						}
 						else
 						{
@@ -554,10 +555,9 @@ namespace GeekTool
 
 					if (!timer.Enabled)
 					{
-						timer.Enabled = true;
-						timer.Start();
-
 						WriteToScreen("Refreshing...");
+						startProcess();
+						startTimer();
 					}
 
 					this.Cursor = Cursors.Default;
@@ -630,7 +630,7 @@ namespace GeekTool
 
 		protected override void WndProc(ref Message m)
 		{
-			if (m.Msg == WM_QUERYENDSESSION)
+			if (m.Msg == Constants.WM_QUERYENDSESSION)
 			{
 				cleanup();
 			}

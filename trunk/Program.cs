@@ -25,10 +25,10 @@ namespace GeekTool
 			{
 				// Grab our application settings.
 				AppSettingsReader appSettings = new AppSettingsReader();
-				logFileName = (string)appSettings.GetValue("logFileName", typeof(string));
+				logFileName = (string)appSettings.GetValue(Constants.LogFileName, typeof(string));
 
 				// Get our instance-specific settings.
-				instances = (List<Instance>)ConfigurationManager.GetSection("instances");
+				instances = (List<Instance>)ConfigurationManager.GetSection(Constants.Instances);
 
 				if (instances == null 
 					|| instances.Count == 0)
@@ -50,8 +50,17 @@ namespace GeekTool
 				instance.Height = 300;
 				instance.X = 0;
 				instance.Y = 0;
-				instance.BackgroundColor = Color.White.R + "," + Color.White.G + "," + Color.White.B;
-				instance.FontColor = Color.Red.R + "," + Color.Red.G + "," + Color.Red.B;
+
+				instance.BackgroundColor = string.Format("{0},{1},{2}",
+					Color.White.R,
+					Color.White.G,
+					Color.White.B);
+
+				instance.FontColor = string.Format("{0},{1},{2}",
+					Color.Red.R,
+					Color.Red.G,
+					Color.Red.B);
+
 				instance.FontFamily = new Font(FontFamily.GenericMonospace, 10).ToString();
 				
 				Main main = new Main(instance, logFileName);
