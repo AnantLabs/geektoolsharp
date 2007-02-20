@@ -1,3 +1,12 @@
+0.5.2
+Code cleanup and refactor.
+Post-build task to automatically generate the executable and source zip files.
+Fixed a bug where if an instance was locked it would disappear when a mouse clicked and dragged over it.
+Moved general code into a common asssembly that is automatically integrated into the regular executable.
+Handle the case where a process takes longer to execute than the timeout to call the process again.
+Explicitedly set the floor for the timerInterval to 2 seconds to also mitigate the above from happening.
+Add GPL license and update the Readme file.
+
 0.5
 Disable the GeekTool icons when a user is ALT-TABing.
 Case-sensitivity option for regex.

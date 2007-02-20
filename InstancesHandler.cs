@@ -16,8 +16,6 @@ namespace GeekTool
 	/// </summary>
 	public class InstancesHandler : IConfigurationSectionHandler
 	{
-		private const string instanceConst = "instance";
-
 		public InstancesHandler()
 		{
 		}
@@ -31,7 +29,7 @@ namespace GeekTool
 		{
 			List<Instance> list = new List<Instance>();
 
-			foreach (XmlNode node in section.SelectNodes(instanceConst))
+			foreach (XmlNode node in section.SelectNodes(Constants.Instance))
 			{
 				XmlNodeReader xmlNodeReader = new XmlNodeReader(node);
 				XmlSerializer serializer = new XmlSerializer(typeof(Instance));

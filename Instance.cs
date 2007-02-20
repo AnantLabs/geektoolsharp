@@ -24,7 +24,7 @@ namespace GeekTool
 		private string fontColor = "0,0,0";
 		private string fontFamily = "Courier New";
 		private int fontSize = 10;
-		private int timerInterval = 5000;
+		private int timerInterval = 2000;
 		private bool isLocked = false;
 		private string displayRegex = string.Empty;
 		private bool isRegexCaseSensitive = false;
@@ -210,7 +210,10 @@ namespace GeekTool
 			}
 			set
 			{
-				timerInterval = value;
+				if (value > 2000)
+				{
+					timerInterval = value;
+				}
 			}
 		}
 
